@@ -1,13 +1,39 @@
-class StringCalculator {
+export class StringCalculator {
+  // Escape special characters in a string
+  escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
   add(numString: string): number {
     // Check for empty string
     if (!numString) return 0;
 
     let delimiters = [",", "\n"];
     let numbersSection = numString;
-  
+
+    // Check for custom delimiter for special characters
+    const customDelimiterMatch = numString.match(/^\/\/(.+)\n/);
+    if (customDelimiterMatch) {
+      const delimiterSpec = customDelimiterMatch[1];
+      if (delimiterSpec.startsWith("[") && delimiterSpec.endsWith("]")) {
+        const regex = /\[([^\]]+)\]/g;
+        let match;
+        delimiters = [];
+        while ((match = regex.exec(delimiterSpec)) !== null) {
+          delimiters.push(match[1]);
+        }
+      } else {
+        delimiters = [delimiterSpec];
+      }
+      numbersSection = numString.split("\n").slice(1).join("\n");
+    }
+
+    const updatedDelimiterRegex = new RegExp(
+      delimiters.map((d) => this.escapeRegExp(d)).join("|"),
+      "g"
+    );
+
     const numberArray = numbersSection
-      .split(delimiters.join("|"))
+      .split(updatedDelimiterRegex)
       .filter((n) => n.trim() !== "")
       .map((n) => Number(n));
 
@@ -21,6 +47,3 @@ class StringCalculator {
   }
 }
 
-const calculator = new StringCalculator();
-console.log(calculator.add("1,2,3")); // Output: 6
-console.log(calculator.add("1\n2,7")); // Output: 10
